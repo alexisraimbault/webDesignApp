@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+    
+</head>
+
+<body >
+    <script src="js/jscolor.js"></script>
+    <div id="colorPick" style="display:none;"> Color: <input id="bgColor" class="jscolor" ></div>
+    <div id="colorPickBorder" style="display:none;" class="container-fuild">
+        <div class="row">
+            <div id="titreBorders" class="col-lg-12">
+                Borders:
+            </div>
+        </div>
+        <div class="row">
+            <div id="borders" class="col-lg-3">
+                <div id="borderTop" class="trapezoid" style="transform: rotate(180deg); top:5px; left:12px;" onclick="Javascript:borderTopClick()"></div>
+                <div id="borderLeft" class="trapezoid" style="transform: rotate(90deg) translateX(12px) translateY(12px); top:12px; left:5px;" onclick="Javascript:borderLeftClick()"></div>
+                <div id="borderAll" style="top:24px; left:24px;" onclick="Javascript:borderAllClick()"></div>
+                <div id="borderRight" class="trapezoid" style="transform: rotate(-90deg) translateX(-12px) translateY(-12px); top:12px; left:42px;" onclick="Javascript:borderRightClick()"></div>
+                <div id="borderBot" class="trapezoid" style="top:42px; left:12px;" onclick="Javascript:borderBotClick()"></div>
+            </div>
+            <div id="borderOptions" class="col-lg-9">
+                <div class="slidecontainer">
+                    <input type="range" min="0" class="slider" id="myRange">
+                    <div id="demoCont">
+                        <input id="demo">
+                        <span>px</span>
+                    </div>
+                </div>
+                <input id="borderColorSelect" class="jscolor" >
+            </div>
+        </div>
+        <div class="row">
+            <div id="selectBorderStyle" class="col-lg-12">
+                <div id="solid" onclick="Javascript:selectSolid()"></div>
+                <div id="dotted" onclick="Javascript:selectDotted()"></div>
+                <div id="dashed" onclick="Javascript:selectDashed()"></div>
+                <div id="double" onclick="Javascript:selectDouble()"></div>
+            </div>
+        </div>
+    </div>    
+    
+    
+    <script type="text/javascript">
+        function init(){
+            env=new Object();
+            env.elts=new Set();
+            env.souris=0;//0 si pas en train de cliquer, 1 apres le mouseDown mais avant le mouseUp
+            env.eltCreation=null;
+            env.mode=0;//differents modes à définir
+            makeDesignPage();
+            env.border=0;//1->top border 2->left 3->all 4 ->right 5 ->bottom
+            env.eltSelect=-1;
+        }
+        function makeDesignPage(){
+            $("head").html("<meta charset=\"UTF-8\"><title>Simple Website</title><link href=\"css/style.css\" rel=\"stylesheet\" type=\"text/css\"/><link href=\"css/bootstrap.min.css\" rel=\"stylesheet\" type=\"text/css\"/>");
+            s="<div class=\"container-fluid container_total\"><div class=\"row\"><div class=\"col-lg-1 container_vertical_toolbar\"><div class=\"row\"><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt select\" onclick=\"Javascript:modeSelect()\">select</div></div><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt conteneur\" onclick=\"Javascript:modeConteneur()\">conteneur</div></div><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt element\" onclick=\"Javascript:modeElement()\">element</div></div><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt image\" onclick=\"Javascript:modeImage()\">image</div></div><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt texte\" onclick=\"Javascript:modeTexte()\">texte</div></div><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt input\" onclick=\"Javascript:modeInput()\">input</div></div><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt nav_bar\" onclick=\"Javascript:modeNav_bar()\">nav_bar</div></div><div class=\"col-lg-12\"><div class=\"col-lg-12 left_toolbar_elt bouton\" onclick=\"Javascript:modeBouton()\">bouton</div></div></div></div>";
+            s+="<div class=\"col-lg-9 container_grid\"><div class=\"row\"><div class=\"col-lg-1 \"></div><div class=\"col-lg-10 grid\" onmousedown=\"Javascript:gridDown(event)\" onmousemove=\"Javascript:gridMove(event)\" onmouseup=\"Javascript:gridUp(event)\">";
+            s+="</div><div class=\"col-lg-1 \"></div></div></div>";
+            s+="<div class=\"col-lg-2 container_right_menu\"></div>";
+            s+="</div>";
+            s+="</div>";
+            tmp=Array.from(env.elts);
+            var i=0;
+    	    while(i<tmp.length){
+                s+="<div id=\"grid_elt\" style=\"cursor:pointer;width:"+tmp[i].wid+"px;height:"+tmp[i].hei+"px;position:absolute;top:"+tmp[i].y+"px;left:"+tmp[i].x+"px;z-index:3;border: 2px solid #E62460;background-color:paleturquoise;\" onmousedown=\"Javascript:gridDown(event)\" onmousemove=\"Javascript:gridMove(event)\" onmouseup=\"Javascript:gridUp(event)\" ></div>";
+                i++;
+            }
+            if(env.eltCreation){
+                s+="<div id=\"grid_elt_creation\" style=\"width:"+env.eltCreation.wid+"px;height:"+env.eltCreation.hei+"px;position:absolute;top:"+env.eltCreation.y+"px;left:"+env.eltCreation.x+"px;z-index:3;border: 2px solid lightgrey;background-color:paleturquoise;\" onmousemove=\"Javascript:gridMove(event)\" onmouseup=\"Javascript:gridUp(event)\"></div>";
+            }
+            $("body").append(s);
+            
+        }
+        
+        function gridDown(event){
+            if(env.mode==3){
+                env.souris=1;
+                env.eltCreation=new element(event.clientX,event.clientY,0,0);
+                $("body").append("<div id=\"grid_elt_creation\" style=\"width:"+env.eltCreation.wid+"px;height:"+env.eltCreation.hei+"px;position:absolute;top:"+env.eltCreation.y+"px;left:"+env.eltCreation.x+"px;z-index:3;border: 2px solid lightgray;\" onmousemove=\"Javascript:gridMove(event)\" onmouseup=\"Javascript:gridUp(event)\"></div>");
+            }
+        }
+        function gridMove(event){
+            if(env.souris==1){
+                
+                env.eltCreation.wid=Math.abs(env.eltCreation.x-event.clientX);
+                env.eltCreation.hei=Math.abs(env.eltCreation.y-event.clientY);
+                $('#grid_elt_creation').css({
+                    width:Math.abs(env.eltCreation.x-event.clientX)+"px",
+                    height:Math.abs(env.eltCreation.y-event.clientY)+"px"
+                });
+                if(env.eltCreation.x>event.clientX){
+                    $('#grid_elt_creation').css({
+                        left:event.clientX
+                    })
+                    //env.eltCreation.x=event.clientX;//done in mouseUp(gridUp)
+                }
+                if(env.eltCreation.y>event.clientY){
+                    $('#grid_elt_creation').css({
+                        top:event.clientY
+                    })
+                    //env.eltCreation.y=event.clientY;//done in mouseUp(gridUp)
+                }
+            }
+        }
+        function gridUp(event){
+            if(env.souris==1){
+                env.souris=0;
+                if(env.eltCreation.x>event.clientX){
+                    env.eltCreation.x=event.clientX;
+                }
+                if(env.eltCreation.y>event.clientY){
+                   env.eltCreation.y=event.clientY;
+                }
+                env.elts.add(env.eltCreation);
+                $('#grid_elt_creation').remove();
+                $("body").append("<div id=\"grid_elt"+(env.elts.size-1)+"\" style=\"width:"+env.eltCreation.wid+"px;height:"+env.eltCreation.hei+"px;position:absolute;top:"+env.eltCreation.y+"px;left:"+env.eltCreation.x+"px;z-index:3;background-color:lightgray;opacity:0.5;border-color:black; border-width:0px; border-top-style:solid;border-right-style:solid;border-left-style:solid;border-bottom-style:solid;\" onmousedown=\"Javascript:gridDown(event)\" onmousemove=\"Javascript:gridMove(event)\" onmouseup=\"Javascript:gridUp(event)\" onclick=\"Javascript:clickElt("+(env.elts.size-1)+")\"></div>");
+                env.eltCreation=null;
+                
+            }
+        }
+        function clickElt(n){
+            env.select=n;
+            if(env.mode==1){
+                //color selector
+                color= $( '#grid_elt'+n ).css("background-color" );
+                bg=document.getElementById("bgColor");
+                bg.value=parseColor(color);
+                $('#colorPick .jscolor').css({
+                    backgroundColor:color
+                })
+                $('#colorPick').css({
+                    display:"block"
+                })
+                $( "#colorPick" ).appendTo( ".container_right_menu" );
+                $( "#colorPick .jscolor" ).attr("onchange","Javascript:updateEltColor("+n+")");
+                
+                
+                //border selector
+                
+                //border width selector
+                
+                $( "#colorPickBorder" ).appendTo( ".container_right_menu" );
+                borderColor= $( '#grid_elt'+n ).css("border-color" );
+                $('#colorPickBorder .jscolor').css({
+                    borderColor:borderColor
+                })
+                /*borderColor= $( '#grid_elt'+n ).css("border-top-color" );
+                $('#borderTop').css({
+                    borderBottomColor:borderColor
+                })
+                borderColor= $( '#grid_elt'+n ).css("border-left-color" );
+                $('#borderLeft').css({
+                    borderBottomColor:borderColor
+                })
+                borderColor= $( '#grid_elt'+n ).css("border-right-color" );
+                $('#borderRight').css({
+                    borderBottomColor:borderColor
+                })
+                borderColor= $( '#grid_elt'+n ).css("border-bottom-color" );
+                $('#borderBot').css({
+                    borderBottomColor:borderColor
+                })*/
+                borderAllClick();
+                var slider = document.getElementById("myRange");
+                var output = document.getElementById("demo");
+                width=parseInt($( '#grid_elt'+n ).css("border-width"),10);
+                dimMax=Math.max(parseInt($( '#grid_elt'+n ).css("width"),10),parseInt($( '#grid_elt'+n ).css("height"),10))/2;
+                
+                slider.max=dimMax;
+                slider.value=width;
+                output.value=width;
+                slider.oninput = function() {
+                    output.value = this.value;
+                    if(env.border==1){
+                        $( '#grid_elt'+n ).css({
+                            borderTopWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==2){
+                        $( '#grid_elt'+n ).css({
+                            borderLeftWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==3){
+                        $( '#grid_elt'+n ).css({
+                            borderWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==4){
+                        $( '#grid_elt'+n ).css({
+                            borderRightWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==5){
+                        $( '#grid_elt'+n ).css({
+                            borderBottomWidth:this.value+"px"
+                        })
+                    }
+                        
+                }
+                output.oninput = function() {
+                    slider.value = this.value;
+                    if(env.border==1){
+                        $( '#grid_elt'+n ).css({
+                            borderTopWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==2){
+                        $( '#grid_elt'+n ).css({
+                            borderLeftWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==3){
+                        $( '#grid_elt'+n ).css({
+                            borderWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==4){
+                        $( '#grid_elt'+n ).css({
+                            borderRightWidth:this.value+"px"
+                        })
+                    }
+                    if(env.border==5){
+                        $( '#grid_elt'+n ).css({
+                            borderBottomWidth:this.value+"px"
+                        })
+                    }
+                }
+                $( "#borderWidth" ).attr("onchange","Javascript:updateBorderWidth("+n+")");
+                $('#colorPickBorder').css({
+                    display:"block"
+                })
+                
+                
+                //border color selector
+                
+                $( "#borderOptions .jscolor" ).attr("onchange","Javascript:updateBorderColor("+n+")");
+                
+                //déplacements
+                
+                afficherPointsModif(n);
+                
+            }
+        }
+        
+        function afficherPointsModif(n){
+            topp=parseInt($( '#grid_elt'+n ).css("top"),10);
+            left=parseInt($( '#grid_elt'+n ).css("left"),10);
+            width=parseInt($( '#grid_elt'+n ).css("width"),10);
+            height=parseInt($( '#grid_elt'+n ).css("height"),10);
+            s="<div id=\"topLeft\" class=\"dot\" style=\"top:"+(topp-3)+"px; left:"+(left-3)+"px;\"></div><div id=\"top\"class=\"dot\" style=\"top:"+(topp-3)+"px; left:"+((left+width/2)-3)+"px;\"></div><div id=\"topRight\" class=\"dot\" style=\"top:"+(topp-3)+"px; left:"+((left+width)-3)+"px;\"></div><div id=\"left\" class=\"dot\" style=\"top:"+((topp+height/2)-3)+"px; left:"+(left-3)+"px;\"></div><div id=\"right\" class=\"dot\" style=\"top:"+((topp+height/2)-3)+"px; left:"+((left+width)-3)+"px;\"></div><div id=\"botLeft\" class=\"dot\" style=\"top:"+((topp+height)-3)+"px; left:"+(left-3)+"px;\"></div><div id=\"bot\" class=\"dot\" style=\"top:"+((topp+height)-3)+"px; left:"+((left+width/2)-3)+"px;\"></div><div id=\"botRight\" class=\"dot\" style=\"top:"+((topp+height)-3)+"px; left:"+((left+width)-3)+"px;\"></div>";
+            $("body").append(s);
+            
+        }
+        
+        function updateEltColor(n){
+            color= $( "#colorPick .jscolor" ).css("background-color" );
+
+            $('#grid_elt'+n).css({
+                    backgroundColor:color,
+                    opacity:1
+                })
+        }
+        /*function updateBorderWidth(n){
+            width=document.getElementById("borderWidth").value;
+            $('#grid_elt'+n).css({
+                    borderWidth:width+"px"
+                })
+        }*/
+        function updateBorderColor(n){
+            color= $( "#borderOptions .jscolor" ).css("background-color" );
+            if(env.border==1){
+                $( '#grid_elt'+env.select ).css({
+                    borderTopColor:color
+                })
+            }
+            if(env.border==2){
+                $( '#grid_elt'+env.select ).css({
+                    borderLeftColor:color
+                })
+            }
+            if(env.border==3){
+                $( '#grid_elt'+env.select ).css({
+                    borderColor:color
+                })
+            }
+            if(env.border==4){
+                $( '#grid_elt'+env.select ).css({
+                    borderRightColor:color
+                })
+            }
+            if(env.border==5){
+                $( '#grid_elt'+env.select ).css({
+                    borderBottomColor:color
+                })
+            }
+        }
+        function selectSolid(){
+            $( '#solid' ).css({
+                    borderColor:"darkblue"
+                })
+            $( '#dotted' ).css({
+                    borderColor:"#555"
+                })
+            $( '#dashed' ).css({
+                    borderColor:"#555"
+                })
+            $( '#double' ).css({
+                    borderColor:"#555"
+                })
+            if(env.border==1){
+                console.log('#grid_elt'+env.select);
+                $( '#grid_elt'+env.select ).css({
+                    
+                    borderTopStyle:"solid"
+                })
+            }
+            if(env.border==2){
+                $( '#grid_elt'+env.select ).css({
+                    borderLeftStyle:"solid"
+                })
+            }
+            if(env.border==3){
+                $( '#grid_elt'+env.select ).css({
+                    borderStyle:"solid"
+                })
+            }
+            if(env.border==4){
+                $( '#grid_elt'+env.select ).css({
+                    borderRightStyle:"solid"
+                })
+            }
+            if(env.border==5){
+                $( '#grid_elt'+env.select ).css({
+                    borderBottomStyle:"solid"
+                })
+            }
+        }
+        function selectDotted(){
+            $( '#solid' ).css({
+                    borderColor:"#555"
+                })
+            $( '#dotted' ).css({
+                    borderColor:"darkblue"
+                })
+            $( '#dashed' ).css({
+                    borderColor:"#555"
+                })
+            $( '#double' ).css({
+                    borderColor:"#555"
+                })
+            if(env.border==1){
+                $( '#grid_elt'+env.select ).css({
+                    borderTopStyle:"dotted"
+                })
+            }
+            if(env.border==2){
+                $( '#grid_elt'+env.select ).css({
+                    borderLeftStyle:"dotted"
+                })
+            }
+            if(env.border==3){
+                $( '#grid_elt'+env.select ).css({
+                    borderStyle:"dotted"
+                })
+            }
+            if(env.border==4){
+                $( '#grid_elt'+env.select ).css({
+                    borderRightStyle:"dotted"
+                })
+            }
+            if(env.border==5){
+                $( '#grid_elt'+env.select ).css({
+                    borderBottomStyle:"dotted"
+                })
+            }
+        }
+        function selectDashed(){
+            $( '#solid' ).css({
+                    borderColor:"#555"
+                })
+            $( '#dotted' ).css({
+                    borderColor:"#555"
+                })
+            $( '#dashed' ).css({
+                    borderColor:"darkblue"
+                })
+            $( '#double' ).css({
+                    borderColor:"#555"
+                })
+            if(env.border==1){
+                $( '#grid_elt'+env.select ).css({
+                    borderTopStyle:"dashed"
+                })
+            }
+            if(env.border==2){
+                $( '#grid_elt'+env.select ).css({
+                    borderLeftStyle:"dashed"
+                })
+            }
+            if(env.border==3){
+                $( '#grid_elt'+env.select ).css({
+                    borderStyle:"dashed"
+                })
+            }
+            if(env.border==4){
+                $( '#grid_elt'+env.select ).css({
+                    borderRightStyle:"dashed"
+                })
+            }
+            if(env.border==5){
+                $( '#grid_elt'+env.select ).css({
+                    borderBottomStyle:"dashed"
+                })
+            }
+        }
+        function selectDouble(){
+            $( '#solid' ).css({
+                    borderColor:"#555"
+                })
+            $( '#dotted' ).css({
+                    borderColor:"#555"
+                })
+            $( '#dashed' ).css({
+                    borderColor:"#555"
+                })
+            $( '#double' ).css({
+                    borderColor:"darkblue"
+                })
+            if(env.border==1){
+                $( '#grid_elt'+env.select ).css({
+                    borderTopStyle:"double"
+                })
+            }
+            if(env.border==2){
+                $( '#grid_elt'+env.select ).css({
+                    borderLeftStyle:"double"
+                })
+            }
+            if(env.border==3){
+                $( '#grid_elt'+env.select ).css({
+                    borderStyle:"double"
+                })
+            }
+            if(env.border==4){
+                $( '#grid_elt'+env.select ).css({
+                    borderRightStyle:"double"
+                })
+            }
+            if(env.border==5){
+                $( '#grid_elt'+env.select ).css({
+                    borderBottomStyle:"double"
+                })
+            }
+        }
+        function borderTopClick(){
+            env.border=1;
+            var slider = document.getElementById("myRange");
+            width=parseInt($( '#grid_elt'+env.select ).css("border-top-width"),10);
+            slider.value=width;
+            
+            color= $( '#grid_elt'+env.select ).css("border-top-color" );
+            
+            bg=document.getElementById("borderColorSelect");
+            bg.value=parseColor(color);
+            if($( '#grid_elt'+env.select ).css("border-top-style" )=="solid"){
+                selectSolid();
+            }
+            if($( '#grid_elt'+env.select ).css("border-top-style" )=="dotted"){
+                selectDotted();
+            }
+            if($( '#grid_elt'+env.select ).css("border-top-style" )=="dashed"){
+                selectDashed();
+            }
+            if($( '#grid_elt'+env.select ).css("border-top-style" )=="doucle"){
+                selectDouble();
+            }
+            $('#borderOptions .jscolor').css({
+                backgroundColor:color
+            })
+            
+            $('#borderTop').css({
+                    borderBottomColor:"darkblue"                
+            })
+            $('#borderLeft').css({
+                    borderBottomColor:"#555" 
+                })
+            
+            $('#borderAll').css({
+                    backgroundColor:"#555" 
+                })
+            $('#borderRight').css({
+                    borderBottomColor:"#555" 
+                })
+            $('#borderBot').css({
+                    borderBottomColor:"#555" 
+                })
+        }
+        function borderLeftClick(){
+            env.border=2;
+            var slider = document.getElementById("myRange");
+            width=parseInt($( '#grid_elt'+env.select ).css("border-left-width"),10);
+            slider.value=width;
+            
+            color= $( '#grid_elt'+env.select ).css("border-left-color" );
+            
+            bg=document.getElementById("borderColorSelect");
+            bg.value=parseColor(color);
+            if($( '#grid_elt'+env.select ).css("border-left-style" )=="solid"){
+                selectSolid();
+            }
+            if($( '#grid_elt'+env.select ).css("border-left-style" )=="dotted"){
+                selectDotted();
+            }
+            if($( '#grid_elt'+env.select ).css("border-left-style" )=="dashed"){
+                selectDashed();
+            }
+            if($( '#grid_elt'+env.select ).css("border-left-style" )=="doucle"){
+                selectDouble();
+            }
+            $('#borderOptions .jscolor').css({
+                backgroundColor:color
+            })
+            
+            $('#borderTop').css({
+                    borderBottomColor:"#555"                
+            })
+            $('#borderLeft').css({
+                    borderBottomColor:"darkblue" 
+                })
+            
+            $('#borderAll').css({
+                    backgroundColor:"#555" 
+                })
+            $('#borderRight').css({
+                    borderBottomColor:"#555" 
+                })
+            $('#borderBot').css({
+                    borderBottomColor:"#555" 
+                })
+        }
+        function borderAllClick(){
+            env.border=3;
+            var slider = document.getElementById("myRange");
+            width=parseInt($( '#grid_elt'+env.select ).css("border-width"),10);
+            slider.value=width;
+            
+            color= $( '#grid_elt'+env.select ).css("border-color" );
+            
+            bg=document.getElementById("borderColorSelect");
+            bg.value=parseColor(color);
+            if($( '#grid_elt'+env.select ).css("border-style" )=="solid"){
+                selectSolid();
+            }
+            if($( '#grid_elt'+env.select ).css("border-style" )=="dotted"){
+                selectDotted();
+            }
+            if($( '#grid_elt'+env.select ).css("border-style" )=="dashed"){
+                selectDashed();
+            }
+            if($( '#grid_elt'+env.select ).css("border-style" )=="doucle"){
+                selectDouble();
+            }
+            $('#borderOptions .jscolor').css({
+                backgroundColor:color
+            })
+            
+            $('#borderTop').css({
+                    borderBottomColor:"#555"                
+            })
+            $('#borderLeft').css({
+                    borderBottomColor:"#555" 
+                })
+            
+            $('#borderAll').css({
+                    backgroundColor:"darkblue" 
+                })
+            $('#borderRight').css({
+                    borderBottomColor:"#555" 
+                })
+            $('#borderBot').css({
+                    borderBottomColor:"#555" 
+                })
+        }
+        function borderRightClick(){
+            env.border=4;
+            var slider = document.getElementById("myRange");
+            width=parseInt($( '#grid_elt'+env.select ).css("border-right-width"),10);
+            slider.value=width;
+            
+            color= $( '#grid_elt'+env.select ).css("border-right-color" );
+            
+            bg=document.getElementById("borderColorSelect");
+            bg.value=parseColor(color);
+            if($( '#grid_elt'+env.select ).css("border-right-style" )=="solid"){
+                selectSolid();
+            }
+            if($( '#grid_elt'+env.select ).css("border-right-style" )=="dotted"){
+                selectDotted();
+            }
+            if($( '#grid_elt'+env.select ).css("border-right-style" )=="dashed"){
+                selectDashed();
+            }
+            if($( '#grid_elt'+env.select ).css("border-right-style" )=="doucle"){
+                selectDouble();
+            }
+            $('#borderOptions .jscolor').css({
+                backgroundColor:color
+            })
+            
+            $('#borderTop').css({
+                    borderBottomColor:"#555"                
+            })
+            $('#borderLeft').css({
+                    borderBottomColor:"#555" 
+                })
+            
+            $('#borderAll').css({
+                    backgroundColor:"#555" 
+                })
+            $('#borderRight').css({
+                    borderBottomColor:"darkblue" 
+                })
+            $('#borderBot').css({
+                    borderBottomColor:"#555" 
+                })
+        }
+        function borderBotClick(){
+            env.border=5;
+            var slider = document.getElementById("myRange");
+            width=parseInt($( '#grid_elt'+env.select ).css("border-bottom-width"),10);
+            slider.value=width;
+            
+            color= $( '#grid_elt'+env.select ).css("border-bottom-color" );
+            if($( '#grid_elt'+env.select ).css("border-bot-style" )=="solid"){
+                selectSolid();
+            }
+            if($( '#grid_elt'+env.select ).css("border-bot-style" )=="dotted"){
+                selectDotted();
+            }
+            if($( '#grid_elt'+env.select ).css("border-bot-style" )=="dashed"){
+                selectDashed();
+            }
+            if($( '#grid_elt'+env.select ).css("border-bot-style" )=="doucle"){
+                selectDouble();
+            }
+            bg=document.getElementById("borderColorSelect");
+            bg.value=parseColor(color);
+            
+            $('#borderOptions .jscolor').css({
+                backgroundColor:color
+            })
+            
+            $('#borderTop').css({
+                    borderBottomColor:"#555"                
+            })
+            $('#borderLeft').css({
+                    borderBottomColor:"#555" 
+                })
+            
+            $('#borderAll').css({
+                    backgroundColor:"#555" 
+                })
+            $('#borderRight').css({
+                    borderBottomColor:"#555" 
+                })
+            $('#borderBot').css({
+                    borderBottomColor:"darkblue" 
+                })
+        }
+        function modeSelect(){
+            env.mode=1;
+            $('.select').css({
+                border:"2px solid darkblue"
+            })
+            $('.conteneur').css({
+                border:"none"
+            })
+            $('.element').css({
+                border:"none"
+            })
+            $('.image').css({
+                border:"none"
+            })
+            $('.texte').css({
+                border:"none"
+            })
+            $('.input').css({
+                border:"none"
+            })
+            $('.nav_bar').css({
+                border:"none"
+            })
+            $('.bouton').css({
+                border:"none"
+            })
+        }
+        function modeConteneur(){
+            env.mode=2;
+            $('.select').css({
+                border:"none"
+            })
+            $('.conteneur').css({
+                border: "2px solid darkblue "
+            })
+            $('.element').css({
+                border:"none"
+            })
+            $('.image').css({
+                border:"none"
+            })
+            $('.texte').css({
+                border:"none"
+            })
+            $('.input').css({
+                border:"none"
+            })
+            $('.nav_bar').css({
+                border:"none"
+            })
+            $('.bouton').css({
+                border:"none"
+            })
+        }
+        function modeElement(){
+            env.mode=3;
+            $('.select').css({
+                border:"none"
+            })
+            $('.conteneur').css({
+                border:"none"
+            })
+            $('.element').css({
+                border:"2px solid darkblue"
+            })
+            $('.image').css({
+                border:"none"
+            })
+            $('.texte').css({
+                border:"none"
+            })
+            $('.input').css({
+                border:"none"
+            })
+            $('.nav_bar').css({
+                border:"none"
+            })
+            $('.bouton').css({
+                border:"none"
+            })
+        }
+        function modeImage(){
+            env.mode=4;
+            $('.select').css({
+                border:"none"
+            })
+            $('.conteneur').css({
+                border:"none"
+            })
+            $('.element').css({
+                border:"none"
+            })
+            $('.image').css({
+                border:"2px solid darkblue"
+            })
+            $('.texte').css({
+                border:"none"
+            })
+            $('.input').css({
+                border:"none"
+            })
+            $('.nav_bar').css({
+                border:"none"
+            })
+            $('.bouton').css({
+                border:"none"
+            })
+        }
+        function modeTexte(){
+            env.mode=5;
+            $('.select').css({
+                border:"none"
+            })
+            $('.conteneur').css({
+                border:"none"
+            })
+            $('.element').css({
+                border:"none"
+            })
+            $('.image').css({
+                border:"none"
+            })
+            $('.texte').css({
+                border:"2px solid darkblue"
+            })
+            $('.input').css({
+                border:"none"
+            })
+            $('.nav_bar').css({
+                border:"none"
+            })
+            $('.bouton').css({
+                border:"none"
+            })
+        }
+        function modeInput(){
+            env.mode=6;
+            $('.select').css({
+                border:"none"
+            })
+            $('.conteneur').css({
+                border:"none"
+            })
+            $('.element').css({
+                border:"none"
+            })
+            $('.image').css({
+                border:"none"
+            })
+            $('.texte').css({
+                border:"none"
+            })
+            $('.input').css({
+                border:"2px solid darkblue"
+            })
+            $('.nav_bar').css({
+                border:"none"
+            })
+            $('.bouton').css({
+                border:"none"
+            })
+        }
+        function modeNav_bar(){
+            env.mode=7;
+            $('.select').css({
+                border:"none"
+            })
+            $('.conteneur').css({
+                border:"none"
+            })
+            $('.element').css({
+                border:"none"
+            })
+            $('.image').css({
+                border:"none"
+            })
+            $('.texte').css({
+                border:"none"
+            })
+            $('.input').css({
+                border:"none"
+            })
+            $('.nav_bar').css({
+                border:"2px solid darkblue"
+            })
+            $('.bouton').css({
+                border:"none"
+            })
+        }
+        function modeBouton(){
+            env.mode=8;
+            $('.select').css({
+                border:"none"
+            })
+            $('.conteneur').css({
+                border:"none"
+            })
+            $('.element').css({
+                border:"none"
+            })
+            $('.image').css({
+                border:"none"
+            })
+            $('.texte').css({
+                border:"none"
+            })
+            $('.input').css({
+                border:"none"
+            })
+            $('.nav_bar').css({
+                border:"none"
+            })
+            $('.bouton').css({
+                border:"2px solid darkblue"
+            })
+        }
+        
+        function element(x,y,wid,hei){
+            this.x=x;
+            this.y=y;
+            this.wid=wid;
+            this.hei=hei;
+        }
+        function parseColor(color) {
+            var arr=[]; color.replace(/[\d+\.]+/g, function(v) { arr.push(parseFloat(v)); });
+            return arr.slice(0, 3).map(toHex).join("");
+        }
+        function toHex(int) {
+            var hex = int.toString(16);
+            return hex.length == 1 ? "0" + hex : hex;
+        }
+        $(init)
+    </script>
+</body>
+</html>
+    

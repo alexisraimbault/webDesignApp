@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+    
+</head>
+
+<body >
+
+
+<script type="text/javascript">
+
+    function init(){
+        noConnection=false;
+        env=new Object();
+        env.m=new Set();
+        env.f=new Set();
+        env.fc=new Set();
+        getListeMeubles();
+        env.index=1;
+        env.ecouter=false;
+        env.indexfc=-1;
+        env.modifier=false;
+        env.vue=-1;
+        env.indLigne=null;
+        env.top=-1;
+        env.left=-1;
+        env.anim=-1;
+        env.aff=-1;
+        env.animPremier=false;
+        env.animDernier=false;
+    }
+    function makeCustomizePage(){
+    	
+    	
+        $("head").html("<meta charset=\"UTF-8\"><title>Jardin Interieur</title><link href=\"https://fonts.googleapis.com/css?family=Amatic+SC|Courgette|Poiret+One|Roboto:100\" rel=\"stylesheet\"><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\"/>");
+        var s="<div id=\"top_scrollC\"><div id=\"buttong\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:gauchef()\"><span> < </span></button></div>";
+        s+="<div id=\"nav_fleurs\"><div id=\"fleurs\">";
+        if(env.index==1){
+	        s+="<div id=\"fleurs2\"><div id=\"fleur_centre\"><img src=\""+env.f[env.index-1].path+"\" style=\"width:170x;height:170px;\"></div>";
+	        s+="<div id=\"fleur_droite\"><img src=\""+env.f[env.index].path+"\" onclick=\"Javascript:droitef()\" style=\"width:170px;height:170px;\"></div></div>";
+        }
+        else{
+        	if(env.index==env.f.length){
+        		s+="<div id=\"fleurs3\"><div id=\"fleur_gauche\"><img src=\""+env.f[env.index-2].path+"\" onclick=\"Javascript:gauchef()\" style=\"width:200px;height:200px;\"></div>";
+    	        s+="<div id=\"fleur_centre\"><img src=\""+env.f[env.index-1].path+"\" style=\"width:170px;height:170px;\"></div></div>";
+        	}
+        	else{
+		        for (var i=env.index-1; (i<env.f.length+1)&&(i<env.index+2);i++) {
+		        	if(i==env.index-1){
+		        		s+="<div id=\"fleur\"><img src=\""+env.f[i-1].path+"\" onclick=\"Javascript:gauchef()\" style=\"width:170px;height:170px;\"></div>";
+		        	}
+		        	if(i==env.index){
+		        		s+="<div id=\"fleur\"><img src=\""+env.f[i-1].path+"\" style=\"width:170px;height:170px;\"></div>";
+		        	}
+		        	if(i==env.index+1){
+		        		s+="<div id=\"fleur\"><img src=\""+env.f[i-1].path+"\" onclick=\"Javascript:droitef()\" style=\"width:170px;height:170px;\"></div>";
+		        	}
+		            
+		        }
+        	}
+        }
+        s+="</div>";
+        
+        if(env.modifier){
+        	s+="<div id=\"buttonEcout\"><button type=\"Button\" id=\"v\" class=\"buttonhor\" onclick=\"Javascript:select()\"><span> valider </span></button></div>";
+        }
+       	s+="</div><div id=\"buttond\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:droitef()\"><span> > </span></button></div></div><div id=\"customize_meuble\"><img id=\"meubleC\" src=\""+env.m[env.meubleCustom].path+"\" onclick=\"souris(event)\" style=\"width:500px;height:500px;position:absolute;left:30%;z-index:1\">";
+        t="<div id=\"liste\"><div id=\"plantes_custom\">";
+        for (let plante of env.fc){
+        	s+="<img src=\""+env.f[plante.index].path+"\" style=\"width:110px;height:110px;position:absolute;top:"+plante.y+"px;left:"+plante.x+"px;z-index:2;\">";
+        	t+="<div id=\"plante_custom\"><img src=\""+env.f[plante.index].path+"\"  style=\"width:70px;height:70px;\"><button type=\"Button\" class=\"buttonhor2\" onclick=\"Javascript:supprimer("+plante.indexfc+")\"><span> enlever </span></button></div>";
+        }
+        t+="</div>";
+        if(env.ecouter){
+        	t+="<div id=\"droiteCust\">choisir un emplacement en cliquant sur l'image</div>";
+        }
+        else{
+        	if(env.modifier){
+        		t+="<div id=\"droiteCust\">choisir la plante puis valider</div>";
+        	}
+        	else{
+        		t+="<div id=\"droiteCust\"><button type=\"Button\" id=\"buttonEcoute\" class=\"buttonhor\" onclick=\"Javascript:activerEcoute()\"><span> ajouter une plante </span></button><button type=\"Button\" id=\"buttonTerminer\" class=\"buttonhor\" onclick=\"Javascript:terminer()\"><span> TERMINER </span></button></div>";
+        	}
+        }
+        t+="</div>";
+        s+=t;
+        s+="</div>";
+        $("body").html(s);
+    }
+    function makeCustomizePage2(){
+    	$("head").html("<meta charset=\"UTF-8\"><title>Jardin Interieur</title><link href=\"https://fonts.googleapis.com/css?family=Amatic+SC|Courgette|Poiret+One|Roboto:100\" rel=\"stylesheet\"><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\"/>");
+    	s="<div id=\"fond\"><img src=\"fond2.jpg\" style=\"width:"+(env.width+17)+"px;height:"+env.height+"px;\"></div><div id=\"custom_panel\">";
+    	tmp=Array.from(env.fc);
+    	console.log(env.aff);
+    	if(env.anim!=-1){
+    		y1=env.top+5.5;
+    		x1=env.left+11;
+    		x2=1100;
+    		y2=250;
+    		dist=Math.sqrt(((x2-x1) * (x2-x1)) + ((y1 - y2) * (y1 - y2)));
+        	xMid=(x1+x2)/2;
+        	yMid=(y2+y1)/2;
+        	angle=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+        	if(env.ecouter){
+        		s+="<div id=\"autour_ligne\"";
+        		s+="style=\"width:"+dist+"px;top:"+yMid+"px;left:"+((x1-dist+x2)/2)+"px;height:2px;transform:rotate("+angle+"deg);z-index:2;position:absolute;\"><div id=\"ligne\"></div></div>";
+        	}
+        	else{
+        		s+="<div id=\"autour_ligne\"";
+        		s+="style=\"width:"+dist+"px;top:"+yMid+"px;left:"+((x1-dist+x2)/2)+"px;height:2px;transform:rotate("+angle+"deg);z-index:2;position:absolute;\"><div id=\"ligne\" style=\"animation:enlarge 0.5s;\"></div></div>";
+        	}
+        	if(false){//savoir si il faut animer
+        		
+        	}
+        	else{
+        		if(tmp[env.anim].index==0){
+        	        s+="<div id=\"panel\"><div id=\"panelClose\" ><img src=\"cancel.png\" onclick=\"Javascript:supprimer2("+tmp[env.anim].indexfc+")\" style=\"width:100%;height:100%;animation:appear 2s;position:relative;z-index:4;border-radius:50%;\"></div><div id=\"panelg\"></div> <div id=\"panelc\"><img src=\""+env.f[tmp[env.anim].index].path+"\" style=\"width:100%;height:100%;animation:bounce 1.5s;position:relative;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+        	        s+="<div id=\"paneld\"><img src=\""+env.f[tmp[env.anim].index+1].path+"\" onclick=\"Javascript:droitep("+env.anim+")\" style=\"width:50%;height:100%;animation:right 2s forwards;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div></div>";
+                }
+                else{
+                	if(tmp[env.anim].index==env.f.length-1){
+                		s+="<div id=\"panel\"><div id=\"panelClose\" ><img src=\"cancel.png\" onclick=\"Javascript:supprimer2("+tmp[env.anim].indexfc+")\" style=\"width:100%;height:100%;animation:appear 2s;position:relative;z-index:4;border-radius:50%;\"></div><div id=\"panelg\"><img src=\""+env.f[tmp[env.anim].index-1].path+"\" onclick=\"Javascript:gauchep("+env.anim+")\" style=\"width:50%;height:100%;animation:left 2s forwards;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+            	        s+="<div id=\"panelc\"><img src=\""+env.f[tmp[env.anim].index].path+"\" style=\"width:100%;height:100%;animation:bounce 1.5s;position:relative;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div><div id=\"paneld\"></div></div>";
+                	}
+                	else{
+                		s+="<div id=\"panel\"><div id=\"panelClose\" ><img src=\"cancel.png\" onclick=\"Javascript:supprimer2("+tmp[env.anim].indexfc+")\" style=\"width:100%;height:100%;animation:appear 2s;position:relative;z-index:4;border-radius:50%;\"></div>";
+                		
+        		        for (var i=tmp[env.anim].index-1; (i<env.f.length)&&(i<tmp[env.anim].index+2);i++) {//SALE
+        		        	if(i==tmp[env.anim].index-1){
+        		        		s+="<div id=\"panelg\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:gauchep("+env.anim+")\" style=\"width:50%;height:100%;animation:left 2s forwards;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+        		        	}
+        		        	if(i==tmp[env.anim].index){
+        		        		s+="<div id=\"panelc\"><img src=\""+env.f[i].path+"\" style=\"width:100%;height:100%;animation:bounce 1.5s;position:relative;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+        		        	}
+        		        	if(i==tmp[env.anim].index+1){
+        		        		s+="<div id=\"paneld\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:droitep("+env.anim+")\" style=\"width:50%;height:100%;animation:right 2s forwards;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+        		        	}
+        		            
+        		        }
+        		        s+="</div>";
+                	}
+                }
+        	}
+        }
+    	else{
+    		if(env.aff!=-1){
+    			y1=env.top+5.5;
+        		x1=env.left+11;
+        		x2=1100;
+        		y2=250;
+        		dist=Math.sqrt(((x2-x1) * (x2-x1)) + ((y1 - y2) * (y1 - y2)));
+            	xMid=(x1+x2)/2;
+            	yMid=(y2+y1)/2;
+            	angle=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+            	
+            	s+="<div id=\"autour_ligne\"";
+            	s+="style=\"width:"+dist+"px;top:"+yMid+"px;left:"+((x1-dist+x2)/2)+"px;height:2px;transform:rotate("+angle+"deg);z-index:2;position:absolute;background-color:black;\"><div id=\"ligne\"></div></div>";
+            	
+            	if(false){//savoir si il faut animer
+            		
+            	}
+            	else{
+            		if(tmp[env.aff].index==0){
+            	        s+="<div id=\"panel\"><div id=\"panelClose\" ><img src=\"cancel.png\" onclick=\"Javascript:supprimer2("+tmp[env.aff].indexfc+")\" style=\"width:100%;height:100%;position:relative;z-index:4;border-radius:50%;\"></div><div id=\"panelg\"></div> <div id=\"panelc\"><img src=\""+env.f[tmp[env.aff].index].path+"\" style=\"width:100%;height:100%;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+            	        s+="<div id=\"paneld\"><img src=\""+env.f[tmp[env.aff].index+1].path+"\" onclick=\"Javascript:droitep("+env.aff+")\" style=\"width:50%;height:100%;left:100px;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div></div>";
+                    }
+                    else{
+                    	if(tmp[env.aff].index==env.f.length-1){
+                    		s+="<div id=\"panel\"><div id=\"panelClose\" ><img src=\"cancel.png\" onclick=\"Javascript:supprimer2("+tmp[env.aff].indexfc+")\" style=\"width:100%;height:100%;position:relative;z-index:4;border-radius:50%;\"></div><div id=\"panelg\"><img src=\""+env.f[tmp[env.aff].index-1].path+"\" onclick=\"Javascript:gauchep("+env.aff+")\" style=\"width:50%;height:100%;position:relative;left:-100px;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                	        s+="<div id=\"panelc\"><img src=\""+env.f[tmp[env.aff].index].path+"\" style=\"width:100%;height:100%;position:relative;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div><div id=\"paneld\"></div></div>";
+                    	}
+                    	else{
+                    		s+="<div id=\"panel\"><div id=\"panelClose\" ><img src=\"cancel.png\" onclick=\"Javascript:supprimer2("+tmp[env.aff].indexfc+")\" style=\"width:100%;height:100%;position:relative;z-index:4;border-radius:50%;\"></div>";
+                    		if(env.animPremier){
+                    			for (var i=tmp[env.aff].index-1; (i<env.f.length)&&(i<tmp[env.aff].index+2);i++) {//SALE
+                		        	if(i==tmp[env.aff].index-1){
+                		        		s+="<div id=\"panelg\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:gauchep("+env.aff+")\" style=\"width:50%;height:100%;animation:left2 0.7s forwards;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";                		        	}
+                		        	if(i==tmp[env.aff].index){
+                		        		s+="<div id=\"panelc\"><img src=\""+env.f[i].path+"\" style=\"width:100%;height:100%;position:relative;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                		        	}
+                		        	if(i==tmp[env.aff].index+1){
+                		        		s+="<div id=\"paneld\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:droitep("+env.aff+")\" style=\"width:50%;height:100%;left:100px;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                		        	}
+                		            
+                		        }
+                    			env.animPremier=false;
+                    		}
+	                    	else{
+                    			if(env.animDernier){
+                    				for (var i=tmp[env.aff].index-1; (i<env.f.length)&&(i<tmp[env.aff].index+2);i++) {//SALE
+                    		        	if(i==tmp[env.aff].index-1){
+                    		        		s+="<div id=\"panelg\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:gauchep("+env.aff+")\" style=\"width:50%;height:100%;position:relative;left:-100px;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                    		        	}
+                    		        	if(i==tmp[env.aff].index){
+                    		        		s+="<div id=\"panelc\"><img src=\""+env.f[i].path+"\" style=\"width:100%;height:100%;position:relative;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                    		        	}
+                    		        	if(i==tmp[env.aff].index+1){
+                    		        		s+="<div id=\"paneld\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:droitep("+env.aff+")\" style=\"width:50%;height:100%;animation:right2 0.7s forwards;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";                    		        	}
+                    		            
+                    		        }
+                    				env.animDernier=false;
+                    			}
+                    			else{
+                    				for (var i=tmp[env.aff].index-1; (i<env.f.length)&&(i<tmp[env.aff].index+2);i++) {//SALE
+                    		        	if(i==tmp[env.aff].index-1){
+                    		        		s+="<div id=\"panelg\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:gauchep("+env.aff+")\" style=\"width:50%;height:100%;position:relative;left:-100px;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                    		        	}
+                    		        	if(i==tmp[env.aff].index){
+                    		        		s+="<div id=\"panelc\"><img src=\""+env.f[i].path+"\" style=\"width:100%;height:100%;position:relative;z-index:4;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                    		        	}
+                    		        	if(i==tmp[env.aff].index+1){
+                    		        		s+="<div id=\"paneld\"><img src=\""+env.f[i].path+"\" onclick=\"Javascript:droitep("+env.aff+")\" style=\"width:50%;height:100%;left:100px;position:relative;z-index:3;border-style:groove;border-width:4px;border-color:purple;border-radius:50%;\"></div>";
+                    		        	}
+                    		            
+                    		        }
+	                    		}
+	                    		
+                    		}
+            		        
+            		        s+="</div>";
+                    	}
+                    }
+            	}
+    		}
+    	}
+    	gauche="<div id=\"custom_panel_gauche\">";
+    	droite="<div id=\"custom_panel_droite\">";
+    	centre="<div id=\"custom_panel_centre\"><img id=\"cadre\" src=\"cadreCarre.png\" style=\"width:580px;height:580px;position:absolute;left:160px;top:260px;z-index:0\"><img id=\"meuble_custom\" src=\""+env.m[env.meubleCustom].path+"\" onclick=\"souris2(event)\" style=\"width:500px;height:500px;position:absolute;left:200px;top:300px;z-index:1\">";
+    	
+    	/*tmp.sort(function(a,b){
+    		return a.y-b.y;
+    	});*/
+    	var i=0;
+    	while(i<tmp.length){
+    		if(i==env.anim-1){
+    			centre+="<div id=\"dot\" style=\"cursor:pointer;width: 11px;height: 11px;position:absolute;top:"+tmp[i].y+"px;left:"+tmp[i].x+"px;z-index:3;animation:bounce 1s;\" onclick=\"Javascript:reloadLine("+tmp[i].y+","+tmp[i].x+","+i+")\"></div>";
+    			env.anim=-1;
+    		}
+    		else{
+    			centre+="<div id=\"dot\" style=\"cursor:pointer;width: 11px;height: 11px;position:absolute;top:"+tmp[i].y+"px;left:"+tmp[i].x+"px;z-index:3;\" onclick=\"Javascript:reloadLine("+tmp[i].y+","+tmp[i].x+","+i+")\"></div>";
+    		}
+    		i++;
+    	}
+    	gauche+="</div>";
+    	droite+="</div>";
+    	centre+="</div>";
+    	if(!env.ecouter){
+    		s+="<div id=\"custom_panel_nav\"><button type=\"Button\" id=\"buttonEcoute\" class=\"buttonhor\" onclick=\"Javascript:activerEcoute2()\"><span> ajouter une plante </span></button><button type=\"Button\" id=\"buttonTerminer\" class=\"buttonhor\" onclick=\"Javascript:terminer()\"><span> TERMINER </span></button></div>";
+    	}
+    	s+=gauche;
+    	s+=centre;
+    	s+=droite;
+    	
+    	s+="</div>";
+    	$("body").html(s);
+    }
+    function makeAcceuilPage(){
+    	env.height=window.innerHeight-4;   // returns height of browser viewport
+    	env.width=window.innerWidth-17;
+    	if(env.index<1){
+    		env.index=1;
+    	}
+    	if(env.index>env.m.length){
+    		env.index=env.m.length;
+    	}
+        $("head").html("<meta charset=\"UTF-8\"><title>Jardin Interieur</title><link href=\"https://fonts.googleapis.com/css?family=Amatic+SC|Courgette|Poiret+One|Roboto:100\" rel=\"stylesheet\"><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\"/>");
+        var s="<div id=\"fond\"><img src=\"fond003.jpg\" style=\"width:"+env.width+"px;height:"+env.height+"px;\"><div id=\"t1\">dans mon jardin</div><div id=\"t2\">int&eacuterieur...</div></div><div id=\"conteneur_menu\"><img src=\"emmaus.png\" style=\"width:95px;height:80px;cursor:pointer;\"onClick=\"Javascript:acceuil()\"><div id=\"barre_menu\"><div id=\"menu_item1\" onclick=\"Javascript:scrollCreations()\"><img src=\"creations.png\" style=\"width:40px;height:40px;\"><div id=\"menu_text\">CR&EacuteATIONS</div></div><div id=\"menu_item2\" onclick=\"Javascript:scrollCustomize()\"><img id=\"logo\" src=\"customize.png\" style=\"width:40px;height:40px;\"><div id=\"menu_text\">CUSTOMISER</div></div><div id=\"menu_item3\" onclick=\"Javascript:scrollChoisir()\"><img id=\"logo\" src=\"choisir.png\" style=\"width:40px;height:40px;\"><div id=\"menu_text\">CHOISIR</div></div></div></div><div id=\"top_scroll\" style=\"top:"+(env.height)*2+"px;width:"+((env.width)-500)+"px;\"><div id=\"buttong\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:gauche()\"><span> < </span></button></div>";
+        s+="<div id=\"nav_meubles\"><div id=\"meubles_acceuil\">";
+        if(env.index==1){
+	        s+="<div id=\"meubles_acceuil2\"><div id=\"meuble_acceuil_centre\"><img src=\""+env.m[env.index-1].path+"\" style=\"width:200px;height:200px;\"></div>";
+	        s+="<div id=\"meuble_acceuil_droite\"><img src=\""+env.m[env.index].path+"\" onclick=\"Javascript:droite()\" style=\"width:200px;height:200px;\"></div></div>";
+	        
+        }
+        else{
+        	if(env.index==env.m.length){
+        		s+="<div id=\"meubles_acceuil3\"><div id=\"meuble_acceuil_gauche\"><img src=\""+env.m[env.index-2].path+"\" onclick=\"Javascript:gauche()\" style=\"width:200px;height:200px;\"></div>";
+    	        s+="<div id=\"meuble_acceuil_centre\"><img src=\""+env.m[env.index-1].path+"\" style=\"width:200px;height:200px;\"></div></div>";
+        	}
+        	
+        	else{
+		        for (var i=env.index-1; (i<env.m.length+1)&&(i<env.index+2);i++) {
+		        	if(i==env.index-1){
+		            	s+="<div id=\"meuble_acceuil\"><img src=\""+env.m[i-1].path+"\" onclick=\"Javascript:gauche()\" style=\"width:200px;height:200px;\"></div>";
+		        	}
+		        	if(i==env.index){
+		        		s+="<div id=\"meuble_acceuil\"><img src=\""+env.m[i-1].path+"\" style=\"width:200px;height:200px;\"></div>";
+		        	}
+		        	if(i==env.index+1){
+		            	s+="<div id=\"meuble_acceuil\"><img src=\""+env.m[i-1].path+"\" onclick=\"Javascript:droite()\" style=\"width:200px;height:200px;\"></div>";
+		        	}
+		        }
+			}
+        }
+        s+="</div><div id=\"valider_meubles\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:getListeFleurs()\"><span> valider </span></button></div></div><div id=\"buttond\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:droite()\"><span> > </span></button></div></div>";
+       	s+="<div id=\"cust_sep\" style=\"top:"+(env.height)*2+"px; position:absolute;width:100%;height:10px;\"></div>";
+       	s+="<div id=\"crea_sep\" style=\"top:"+(env.height)+"px; position:absolute;width:100%;height:10px;\"></div>";
+       	s+="<div id=\"choi_sep\" style=\"top:"+(env.height)*3+"px; position:absolute;width:100%;height:10px;\"></div>";
+        s+="<div id=\"nav_crea\" style=\"top:"+(env.height)+"px;width:"+((env.width)-500)+"px;\"><div id=\"buttongCrea\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:gauche()\"><span> < </span></button></div><div id=\"meubles_acceuil\">id&eacutees de meubles d'int&eacuterieur</div><div id=\"buttondCrea\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:gauche()\"><span> > </span></button></div></div>";
+        s+="<div id=\"nav_choi\" style=\"top:"+(env.height)*3+"px;width:"+((env.width)-500)+"px;\"><div id=\"buttongChoi\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:gauche()\"><span> < </span></button></div><div id=\"meubles_acceuil\">meubles d&eacutej&agrave d&eacutecor&eacutes</div><div id=\"buttondChoi\"><button type=\"Button\" class=\"buttonhor\" onclick=\"Javascript:gauche()\"><span> > </span></button></div></div>";
+        $("body").html(s);
+        
+    }
+    $(init)
+    function acceuil(){
+    	document.getElementById("fond").scrollIntoView({ 
+    		block: "start", inline: "nearest",behavior: 'smooth'
+      	});
+    }
+   	function scrollCustomize(){
+    	document.getElementById("cust_sep").scrollIntoView({ 
+    		block: "start", inline: "nearest",behavior: 'smooth'
+      	});
+    }
+    function scrollCreations(){
+    	document.getElementById("crea_sep").scrollIntoView({ 
+    		block: "start", inline: "nearest",behavior: 'smooth'
+      	});
+    }
+    function scrollChoisir(){
+    	document.getElementById("choi_sep").scrollIntoView({ 
+    		block: "start", inline: "nearest",behavior: 'smooth' 
+      	});
+    }
+    function gauche(){
+    	env.index--;
+    	document.location.href="#cust_sep";
+    	makeAcceuilPage();
+    	
+
+    }
+    function droite(){
+    	env.index++;
+    	document.location.href="#cust_sep";
+    	makeAcceuilPage();
+    	
+    }
+    function gauchef(){
+    	env.index--;
+    	if(env.index<1){
+    		env.index=1;
+    	}
+    	if(env.modifier){
+	    	for (let plante of env.fc){
+	    		
+	        	if(plante.indexfc==env.indexfc){
+	        		plante.index=env.index-1;
+	        	}
+	        }
+    	}
+    	makeCustomizePage();
+    }
+    function droitep(x){
+    	for (let plante of env.fc){
+	        if(plante.indexfc==x){
+	        	if (plante.index==0){
+	        		env.animPremier=true;
+	        	}
+	        	plante.index++;
+	        	if(plante.index>=env.f.length){
+	        		plante.index=1;
+	        	}
+	        }
+	    }
+    	env.anim=-1;
+    	env.aff=x;
+    	makeCustomizePage2();
+    }
+    function gauchep(x){
+	    for (let plante of env.fc){
+	        if(plante.indexfc==x){
+	        	if (plante.index==env.f.length-1){
+	        		env.animDernier=true;
+	        	}
+	        	plante.index--;
+	        	if(plante.index<0){
+	        		plante.index=env.f.length-1;
+	        	}
+	        }
+	    }
+	    env.anim=-1;
+    	env.aff=x;
+    	makeCustomizePage2();
+    }
+    function droitef(){
+    	env.index++;
+    	if(env.index>env.f.length){
+    		env.index=env.f.length;
+    	}
+    	if(env.modifier){
+	    	for (let plante of env.fc){
+	        	if(plante.indexfc==env.indexfc){
+	        		plante.index=env.index-1;
+	        	}
+	        }
+    	}
+    	makeCustomizePage();
+    }
+    function getListeMeubles(){
+    	$.ajax({
+        	type:"POST",
+		    url:"ListeMeubles",
+            data:"",
+            datatyp:"text",
+            success:function(rep){console.log(rep);getListeMeublesResponse(rep);},
+            error:function(XHR, textStatus, errorthrown){alert(textStatus);}
+    	})
+    }
+    function getListeMeublesResponse(rep){
+        repd=JSON.parse(rep);
+        if(repd.error==undefined){
+            if(repd.status=="OK"){
+                var meublesbd=repd.meubles;
+                meubles=new Set();
+                for(var i=0; i<meublesbd.length;i++){
+                    tmp=meublesbd[i];
+                    meubles.add(new meuble(tmp.nom,tmp.path,tmp.id));
+                }
+                env.m=Array.from(meubles);
+                makeAcceuilPage();
+            }
+            else{
+                alert(repd.error);
+            }
+        }
+    }
+    function meuble(nom,path,id){
+        this.nom=nom;
+        this.path=path;
+        this.id=id;
+    }
+    
+    function getListeFleurs(){
+    	$.ajax({
+            type:"POST",
+            url:"ListeFleurs",
+            data:"",
+            datatyp:"text",
+            success:function(rep){console.log(rep);getListeFleursResponse(rep);},
+            error:function(XHR, textStatus, errorthrown){alert(textStatus);}
+    	})
+    }
+    function getListeFleursResponse(rep){
+        repd=JSON.parse(rep);
+        if(repd.error==undefined){
+            if(repd.status=="OK"){
+                var fleursbd=repd.fleurs;
+                fleurs=new Set();
+                for(var i=0; i<fleursbd.length;i++){
+                    tmp=fleursbd[i];
+                    fleurs.add(new fleur(tmp.nom,tmp.path,tmp.id));
+                }
+                env.f=Array.from(fleurs);
+                env.meubleCustom=env.index-1;
+                env.index=1;
+                makeCustomizePage2();
+            }
+            else{
+                alert(repd.error);
+            }
+        }
+    }
+    function fleur(nom,path,id){
+        this.nom=nom;
+        this.path=path;
+        this.id=id;
+    }
+    function fleurCustom(index,indexfc,x,y){
+        this.index=index;
+        this.indexfc=indexfc;
+        this.x=x;
+        this.y=y;
+    }
+    function activerEcoute(){
+    	env.ecouter=true;
+    	makeCustomizePage();
+    }
+    function activerEcoute2(){
+    	env.ecouter=true;
+    	makeCustomizePage2();
+    }
+    function supprimer(ind){
+    	for (let plante of env.fc){
+        	if(plante.indexfc==ind){
+        		env.fc.delete(plante);
+        	}
+        }
+    	makeCustomizePage();
+    }
+    function supprimer2(ind){
+    	for (let plante of env.fc){
+        	if(plante.indexfc==ind){
+        		env.fc.delete(plante);
+        	}
+        }
+    	env.anim=-1;
+    	env.aff=-1;
+    	makeCustomizePage2();
+    }
+    function select(){
+    	env.modifier=false;
+    	makeCustomizePage();
+    }
+    function souris(event)
+    {
+    	if(env.ecouter){
+    		env.indexfc++;
+    		env.fc.add(new fleurCustom(env.index-1,env.indexfc,event.clientX-55,event.clientY-545));//ajouter -35 a x-10 pour que ce soit centré.
+	      	env.ecouter=false;
+	      	makeCustomizePage2();
+	      	
+	      	
+    	}
+    }
+    function souris2(event)
+    {
+    	if(env.ecouter){
+    		env.indexfc++;
+    		env.fc.add(new fleurCustom(0,env.indexfc,event.clientX-5,event.clientY-5));//ajouter -35 a x-10 pour que ce soit centré.
+	      	env.top=event.clientY-5;
+	      	env.left=event.clientX-5;
+    		env.ecouter=false;
+	      	env.modifier=true;
+	      	env.anim=env.fc.size-1;
+	      	makeCustomizePage2();
+	      	
+	      	
+    	}
+    }
+    function addFleurMeuble(flCust){
+    	$.ajax({
+        	type:"POST",
+		    url:"AddFleurMeuble",
+            data:"idFleur="+env.f[flCust.index].id+"&idMeuble="+env.m[env.meubleCustom].id+"&posX="+flCust.x+"&posY="+flCust.y,
+            datatyp:"text",
+            success:function(rep){console.log(rep);addFleurMeubleResponse(rep);},
+            error:function(XHR, textStatus, errorthrown){alert(textStatus);}
+    	})
+    }
+    function addFleurMeubleResponse(rep){
+        repd=JSON.parse(rep);
+        if(repd.error==undefined){
+            if(repd.status=="OK"){
+                
+            }
+            else{
+                alert(repd.error);
+            }
+        }
+    }
+    function reloadLine(top,left,i){
+    	env.anim=i;
+    	env.top=top;
+    	env.left=left;
+    	makeCustomizePage2();
+    }
+    function dotClick(dot){
+    	createLine((dot.top+dot.height/2),(dot.left+dot.height/2),1000,500,"ligne")
+    }
+    function createLine(x1,y1,x2,y2,lineId){
+    	
+    	dist=Math.sqrt(((x1-x2)*(x1-x2))+((y1-y2)*(y1-y2)));
+    	xMid=(x1+x2)/2;
+    	yMid=(y1+y2)/2;
+    	angleRad=Math.atan2(y1-y2,x1-x2);
+    	angleDeg=(angleRad*180)/Math.PI;
+    	line=document.getElementById(lineId);
+    	line.style.width=dist;
+    	line.style.top=yMid;
+    	line.style.left=xMid-(dist/2);
+    	line.style.transform="rotate("+angleDeg+"deg)";
+    }
+    function terminer(){
+    	for (let plante of env.fc){
+        	addFleurMeuble(plante);
+        }
+    	alert("demande bien prise en compte");
+    }
+    </script>
+</body>
+</html>
